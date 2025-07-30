@@ -33,12 +33,11 @@ enum EnrollmentStatus {
 }
 
 model User {
-  id              String         @id @db.Uuid
+  id              String         @id @default(uuid()) @db.Uuid
   name            String?
   profileImageUrl String?
   createdAt       DateTime       @default(now())
   updatedAt       DateTime       @updatedAt
-  interests       String[]
   tags            Tag[]    @relation("UserTags")
 
   enrollments     Enrollment[]
@@ -46,7 +45,7 @@ model User {
 }
 
 model Instructor {
-  id          String   @id @default(uuid())
+  id          String   @id @default(uuid()) @db.Uuid
   image       String?
   information String?
   schedule    String?
@@ -58,18 +57,18 @@ model Instructor {
 }
 
 model Course {
-  id                        String       @id @db.Uuid
+  id                        String       @id @default(uuid()) @db.Uuid
   title                     String
   status                    CourseStatus @default(FUNDING)
-  fundingTargetAmount       Int
+  fundingTargetAmount       Decimal
   fundingStartDate          DateTime 
   fundingEndDate            DateTime 
   courseStartDate           DateTime
-  postFundingPrice          Int? // 펀딩 종료 후 판매 가격
+  postFundingPrice          Decimal? // 펀딩 종료 후 판매 가격
   createdAt                 DateTime     @default(now())
   updatedAt                 DateTime     @updatedAt
 
-  instructorId String
+  instructorId String   @db.Uuid
   instructor   Instructor @relation(fields: [instructorId], references: [id])
 
   introduction CourseIntroduction?
@@ -82,7 +81,7 @@ model Course {
 }
 
 model Tag {
-  id   Int    @id @default(dbgenerated())
+  id   Int    @id @default(autoincrement())
   name String @unique
 
   courses Course[] @relation("CourseTags")
@@ -90,93 +89,93 @@ model Tag {
 }
 
 model CourseIntroduction {
-  id                    String  @id @default(cuid())
+  id                    Int     @id @default(autoincrement())
   coverImageUrl         String
   description           String
   scheduleDetails       String
 
-  courseId String @unique
+  courseId String @unique @db.Uuid
   course   Course @relation(fields: [courseId], references: [id], onDelete: Cascade)
 }
 
 model CourseSession {
-  id             String   @id @default(cuid())
+  id             Int      @id @default(autoincrement())
   sessionNumber  Int
   title          String
   content        String?
   materials      String?
   createdAt      DateTime @default(now())
 
-  courseId String
+  courseId String @db.Uuid
   course   Course @relation(fields: [courseId], references: [id], onDelete: Cascade)
 }
 
 model CourseNotice {
-  id        String   @id @default(cuid())
+  id        Int      @id @default(autoincrement())
   title     String
   content   String
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  courseId String
+  courseId String @db.Uuid
   course   Course @relation(fields: [courseId], references: [id], onDelete: Cascade)
 }
 
 model FundingTier {
-  id                 String   @id @default(cuid())
-  price              Int
+  id                 Int      @id @default(autoincrement())
+  price              Decimal
   benefitDescription String
   createdAt          DateTime @default(now())
 
-  courseId String
+  courseId String @db.Uuid
   course   Course @relation(fields: [courseId], references: [id], onDelete: Cascade)
 
   enrollments Enrollment[]
 }
 
 model Enrollment {
-  id           String        @id @default(cuid())
-  amountPaid   Int
+  id           Int           @id @default(autoincrement())
+  amountPaid   Decimal
   createdAt    DateTime      @default(now())
-  status       EnrollmentStatus @default(PLEDGED)
+  status       EnrollmentStatus
   type         EnrollmentType
 
-  userId String
+  userId String @db.Uuid
   user   User   @relation(fields: [userId], references: [id])
 
-  courseId String
+  courseId String @db.Uuid
   course   Course @relation(fields: [courseId], references: [id])
 
-  fundingTierId String
-  fundingTier   FundingTier @relation(fields: [fundingTierId], references: [id])
+  fundingTierId Int?
+  fundingTier   FundingTier? @relation(fields: [fundingTierId], references: [id])
 
   @@unique([userId, courseId])
 }
 
 model CourseReview {
-  id        String   @id @default(cuid())
+  id        String   @id @default(uuid()) @db.Uuid
   title     String
   content   String
   rating    Int
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  userId String
+  userId String @db.Uuid
   user   User   @relation(fields: [userId], references: [id])
 
-  courseId String
+  courseId String @db.Uuid
   course   Course @relation(fields: [courseId], references: [id], onDelete: Cascade)
 
   @@unique([userId, courseId])
 }
 
 model InstructorNotice {
-  id        String   @id @default(cuid())
+  id        Int      @id @default(autoincrement())
   title     String
   content   String
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  instructorId String
+  instructorId String     @db.Uuid
   instructor   Instructor @relation(fields: [instructorId], references: [id], onDelete: Cascade)
 }
