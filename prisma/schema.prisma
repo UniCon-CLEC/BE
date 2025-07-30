@@ -12,3 +12,171 @@ datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
 }
+
+enum CourseStatus {
+  FUNDING
+  ACTIVE
+  COMPLETED
+  CANCELED
+}
+
+enum EnrollmentType {
+  FUNDING
+  PURCHASE
+}
+
+enum EnrollmentStatus {
+  PLEDGED
+  PAID
+  PAYMENT_FAILED
+  CANCELED
+}
+
+model User {
+  id              String         @id @db.Uuid
+  name            String?
+  profileImageUrl String?
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+  interests       String[]
+  tags            Tag[]    @relation("UserTags")
+
+  enrollments     Enrollment[]
+  reviews         CourseReview[]
+}
+
+model Instructor {
+  id          String   @id @default(uuid())
+  image       String?
+  information String?
+  schedule    String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  courses Course[]
+  notices InstructorNotice[]
+}
+
+model Course {
+  id                        String       @id @db.Uuid
+  title                     String
+  status                    CourseStatus @default(FUNDING)
+  fundingTargetAmount       Int
+  fundingStartDate          DateTime 
+  fundingEndDate            DateTime 
+  courseStartDate           DateTime
+  postFundingPrice          Int? // 펀딩 종료 후 판매 가격
+  createdAt                 DateTime     @default(now())
+  updatedAt                 DateTime     @updatedAt
+
+  instructorId String
+  instructor   Instructor @relation(fields: [instructorId], references: [id])
+
+  introduction CourseIntroduction?
+  sessions     CourseSession[]
+  notices      CourseNotice[]
+  fundingTiers FundingTier[]
+  enrollments  Enrollment[]
+  reviews      CourseReview[]
+  tags         Tag[]       @relation("CourseTags")
+}
+
+model Tag {
+  id   Int    @id @default(dbgenerated())
+  name String @unique
+
+  courses Course[] @relation("CourseTags")
+  users   User[]   @relation("UserTags")
+}
+
+model CourseIntroduction {
+  id                    String  @id @default(cuid())
+  coverImageUrl         String
+  description           String
+  scheduleDetails       String
+
+  courseId String @unique
+  course   Course @relation(fields: [courseId], references: [id], onDelete: Cascade)
+}
+
+model CourseSession {
+  id             String   @id @default(cuid())
+  sessionNumber  Int
+  title          String
+  content        String?
+  materials      String?
+  createdAt      DateTime @default(now())
+
+  courseId String
+  course   Course @relation(fields: [courseId], references: [id], onDelete: Cascade)
+}
+
+model CourseNotice {
+  id        String   @id @default(cuid())
+  title     String
+  content   String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  courseId String
+  course   Course @relation(fields: [courseId], references: [id], onDelete: Cascade)
+}
+
+model FundingTier {
+  id                 String   @id @default(cuid())
+  price              Int
+  benefitDescription String
+  createdAt          DateTime @default(now())
+
+  courseId String
+  course   Course @relation(fields: [courseId], references: [id], onDelete: Cascade)
+
+  enrollments Enrollment[]
+}
+
+model Enrollment {
+  id           String        @id @default(cuid())
+  amountPaid   Int
+  createdAt    DateTime      @default(now())
+  status       EnrollmentStatus @default(PLEDGED)
+  type         EnrollmentType
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id])
+
+  courseId String
+  course   Course @relation(fields: [courseId], references: [id])
+
+  fundingTierId String
+  fundingTier   FundingTier @relation(fields: [fundingTierId], references: [id])
+
+  @@unique([userId, courseId])
+}
+
+model CourseReview {
+  id        String   @id @default(cuid())
+  title     String
+  content   String
+  rating    Int
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id])
+
+  courseId String
+  course   Course @relation(fields: [courseId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, courseId])
+}
+
+model InstructorNotice {
+  id        String   @id @default(cuid())
+  title     String
+  content   String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  instructorId String
+  instructor   Instructor @relation(fields: [instructorId], references: [id], onDelete: Cascade)
+}
