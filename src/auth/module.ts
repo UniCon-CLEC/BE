@@ -22,7 +22,13 @@ import { AuthController } from './controller';
   providers: [
     AuthService,
     PrismaService,
-    JwtStrategy
+    {
+      provide: JwtStrategy,
+      useFactory: (prisma: PrismaService, configService: ConfigService) => {
+        return new JwtStrategy(prisma, configService);
+      },
+      inject: [PrismaService, ConfigService],
+    },
   ],
   controllers: [AuthController]
 })
