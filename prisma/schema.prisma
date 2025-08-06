@@ -81,11 +81,15 @@ model Course {
 }
 
 model Tag {
-  id   Int    @id @default(autoincrement())
-  name String @unique
+  id        Int    @id @default(autoincrement())
+  name      String @unique
 
-  courses Course[] @relation("CourseTags")
-  users   User[]   @relation("UserTags")
+  parentId  Int?
+  parent    Tag?     @relation("ParentChild", fields: [parentId], references: [id], onDelete: Cascade)
+  children  Tag[]    @relation("ParentChild")
+
+  courses   Course[] @relation("CourseTags")
+  users     User[]   @relation("UserTags")
 }
 
 model CourseIntroduction {
