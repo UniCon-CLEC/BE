@@ -1,10 +1,10 @@
 import { createParamDecorator, ExecutionContext } from '@nestjs/common';
-import { SupabaseJwtPayload } from 'src/auth/types/jwt-payload.type';
+import { UserInRequest } from 'src/auth/types/user-request.type';
 
 export const User = createParamDecorator(
   (data: unknown, ctx: ExecutionContext) => {
     const request = ctx.switchToHttp().getRequest();
-    const user: SupabaseJwtPayload = request.user
+    const user: UserInRequest = request.user
     return user
   },
 );
