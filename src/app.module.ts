@@ -5,6 +5,7 @@ import { PrismaModule } from './prisma/prisma.module';
 import { ConfigModule } from '@nestjs/config';
 import { AuthModule } from './auth/module';
 import { TagModule } from './tag/module';
+import { MeModule } from './me/module';
 
 @Module({
   imports: [
@@ -14,7 +15,8 @@ import { TagModule } from './tag/module';
     }),
     PrismaModule,
     AuthModule,
-    TagModule
+    TagModule,
+    MeModule
   ],
   controllers: [AppController],
   providers: [AppService],
