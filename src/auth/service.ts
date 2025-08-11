@@ -17,10 +17,11 @@ export class AuthService {
         
         const { id, profileImageUrl } = user
         const { name: onboardingName, tagIds } = onboardingData
-        const finalName = onboardingName || user.name
+        
+        const finalName = (onboardingName || user.name)?.trim();
         if (!finalName)
             throw new BadRequestException('이름을 입력해주세요.')
-        
+
         if (tagIds && tagIds.length > 0){
             const validTagsCount = await this.prisma.tag.count({
                 where: {
