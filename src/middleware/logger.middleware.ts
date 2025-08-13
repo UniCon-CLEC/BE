@@ -6,18 +6,23 @@ export class LoggerMiddleware implements NestMiddleware {
   private logger = new Logger('HTTP');
 
   use(req: Request, res: Response, next: NextFunction) {
-    const { method, originalUrl } = req;
+    const { method, originalUrl, ip } = req;
 
     res.on('finish', () => {
       const { statusCode } = res;
-      const contentLength = res.get('content-length');
+      const contentLength = res.get('content-length') || 0;
 
-      this.logger.log(
-        `[${method}] : [${statusCode} | [${contentLength}]] / ${originalUrl}`
-      );
+      const logMessage = `${method} ${originalUrl} ${statusCode} ${contentLength}bytes - ${ip}`;
+      
+      if (statusCode >= 500)
+        this.logger.error(logMessage);
+      else if (statusCode >= 400)
+        this.logger.warn(logMessage)
+      else
+        this.logger.log(logMessage)
 
-      if (method === 'POST') {
-        this.logger.log(`Request Body: ${JSON.stringify(req.body)}`);
+      if(['POST', 'PUT', 'PATCH'].includes(method)){
+        this.logger.debug(JSON.stringify(req.body))
       }
     });
 
