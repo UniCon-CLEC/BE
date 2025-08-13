@@ -16,5 +16,6 @@ export class OnboardingDto{
 
     @IsArray()
     @IsInt({ each: true })
-    tagIds: number[]
+    @IsOptional()
+    tagIds?: number[]
 }

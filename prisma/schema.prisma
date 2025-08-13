@@ -46,6 +46,7 @@ model User {
 
 model Instructor {
   id          String   @id @default(uuid()) @db.Uuid
+  name        String
   image       String?
   information String?
   schedule    String?

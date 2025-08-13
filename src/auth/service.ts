@@ -15,30 +15,31 @@ export class AuthService {
         if (user.onboarded)
             throw new ConflictException('이미 온보딩을 완료한 계정입니다.')
         
-        const { name, id, profileImageUrl } = user
-
-        const finalName = onboardingData.name || user.name
+        const { id, profileImageUrl } = user
+        const { name: onboardingName, tagIds } = onboardingData
+        
+        const finalName = (onboardingName || user.name)?.trim();
         if (!finalName)
             throw new BadRequestException('이름을 입력해주세요.')
-        
-        if (onboardingData.tagIds.length > 0){
-            const validTagsCount = await this.prisma.tag.findMany({
+
+        if (tagIds && tagIds.length > 0){
+            const validTagsCount = await this.prisma.tag.count({
                 where: {
-                    id: { in: onboardingData.tagIds }
+                    id: { in: tagIds }
                 }
             })
 
-            if (onboardingData.tagIds.length !== validTagsCount.length)
+            if (tagIds.length !== validTagsCount)
                 throw new BadRequestException("올바르지 않은 태그 포함")
         }
 
         return await this.prisma.user.create({
             data: {
                 id,
-                name,
+                name: finalName,
                 profileImageUrl,
                 tags: {
-                    connect: onboardingData.tagIds.map(tagId => ({ id: tagId }))
+                    connect: tagIds?.map(tagId => ({ id: tagId }))
                 }
             },
             include: {
