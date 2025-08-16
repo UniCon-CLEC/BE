@@ -61,3 +61,21 @@ NestJS와 Prisma를 기반으로 구축된 CLEC 프로젝트의 백엔드 서버
 개발 서버 실행 후, 아래 주소로 접속하면 Swagger를 통해 API 문서를 확인하고 직접 테스트해볼 수 있습니다.
 
 * **Swagger**: `http://localhost:3000/docs`
+
+## 🚀 CI/CD (자동 배포)
+
+본 프로젝트는 GitHub Actions, Docker, Azure를 활용한 CI/CD 파이프라인이 구축되어 있습니다. `develop` 브랜치에 새로운 코드가 푸시(Push)될 때마다 자동으로 서버 애플리케이션의 빌드와 배포가 진행됩니다.
+
+* **Trigger Branch**: `develop`
+* **CI/CD Platform**: `GitHub Actions`
+* **Containerization**: `Docker`
+* **Cloud Provider**: `Azure`
+    * **Hosting**: Azure App Service (for Containers)
+    * **Image Registry**: Azure Container Registry (ACR)
+
+### 배포 파이프라인 주요 과정
+
+1.  **Docker 이미지 빌드**: `Dockerfile`을 기반으로 NestJS 애플리케이션의 프로덕션용 이미지를 생성합니다.
+2.  **ACR에 이미지 푸시**: 생성된 이미지를 버전 태그와 함께 Azure Container Registry에 업로드합니다.
+3.  **Azure App Service에 배포**: ACR에 업로드된 최신 이미지를 App Service에 배포하여 새로운 버전의 애플리케이션을 실행합니다.
+4.  **DB 마이그레이션**: 배포된 컨테이너가 시작될 때 `npx prisma migrate deploy` 명령어를 자동으로 실행하여, 데이터베이스 스키마를 항상 최신 상태로 유지합니다.
