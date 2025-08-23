@@ -20,7 +20,7 @@ import {
 @Controller('tag')
 export class TagController{
     constructor(private readonly tagService: TagService) {}
-
+    /*
     @Post()
     @ApiOperation({ summary: '태그 생성' })
     @ApiResponse({ status: 201, description: '성공' })
@@ -38,6 +38,7 @@ export class TagController{
     async deleteTag(@Param() params: IdParamDto){
         return this.tagService.delete(params.id)
     }
+    */
 
     @Get()
     @ApiOperation({ summary: '태그 전체 조회' })
