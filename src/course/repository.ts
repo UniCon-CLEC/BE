@@ -13,7 +13,7 @@ export class CourseRepository {
       }
     },
     enrollments: {
-      enrollments: { where: { status: EnrollmentStatus.PAID } },
+      where: { status: EnrollmentStatus.PAID },
       select: { amountPaid: true }
     }
   }
