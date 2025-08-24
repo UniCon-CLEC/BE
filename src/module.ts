@@ -8,6 +8,7 @@ import { TagModule } from './tag/module';
 import { MeModule } from './me/module';
 import { LoggerMiddleware } from './middleware/logger.middleware';
 import { CourseModule } from './course/module';
+import { InstructorModule } from './instructor/module';
 
 @Module({
   imports: [
@@ -19,7 +20,8 @@ import { CourseModule } from './course/module';
     AuthModule,
     TagModule,
     MeModule,
-    CourseModule
+    CourseModule,
+    InstructorModule
   ],
   controllers: [AppController],
   providers: [AppService],
