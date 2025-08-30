@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { InstructorRepository } from './repository';
 import { CreateTrackDto, CreateCrewDto, InstructorDto, CourseInfoDto } from './dto';
 import { Instructor, Course, CourseType } from '@prisma/client';
@@ -20,7 +20,7 @@ export class InstructorService {
   }
 
   async createTrack(instructorId: string, createTrackDto: CreateTrackDto) {
-    const { title, courseStartDate, status, fundingTargetAmount, fundingStartDate, fundingEndDate } = createTrackDto;
+    const { title, courseStartDate, status, fundingTargetAmount, fundingStartDate, fundingEndDate, introduction, sessions } = createTrackDto;
 
     return this.prisma.course.create({
       data: {
@@ -28,23 +28,31 @@ export class InstructorService {
         title,
         type: CourseType.TRACK,
         courseStartDate,
+        introduction: {
+          create: introduction,
+        },
+        sessions: {
+          create: sessions,
+        },
         track: {
           create: {
             status: status || 'PREPARING',
-            fundingTargetAmount: fundingTargetAmount || 0,
-            fundingStartDate: fundingStartDate || new Date(),
-            fundingEndDate: fundingEndDate || new Date(),
+            fundingTargetAmount: fundingTargetAmount,
+            fundingStartDate: fundingStartDate,
+            fundingEndDate: fundingEndDate,
           }
         },
       },
       include: {
         track: true,
+        introduction: true,
+        sessions: true,
       }
     });
   }
 
   async createCrew(instructorId: string, createCrewDto: CreateCrewDto) {
-    const { title, courseStartDate, status, price } = createCrewDto;
+    const { title, courseStartDate, status, price, introduction, sessions } = createCrewDto;
 
     return this.prisma.course.create({
       data: {
@@ -52,15 +60,23 @@ export class InstructorService {
         title,
         type: CourseType.CREW,
         courseStartDate,
+        introduction: {
+          create: introduction,
+        },
+        sessions: {
+          create: sessions,
+        },
         crew: {
           create: {
             status: status || 'PREPARING',
-            price: price || 0,
+            price: price,
           }
         },
       },
       include: {
         crew: true,
+        introduction: true,
+        sessions: true,
       }
     });
   }

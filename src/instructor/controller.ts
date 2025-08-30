@@ -19,14 +19,20 @@ export class InstructorController {
   @Post(':id/tracks')
   @ApiOperation({ summary: '강사의 새 트랙 코스 생성' })
   @ApiResponse({ status: 201, description: '성공' })
-  async createTrack(@Param('id', new ParseUUIDPipe()) id: string, @Body() createTrackDto: CreateTrackDto) {
+  async createTrack(
+    @Param('id', new ParseUUIDPipe()) id: string,
+    @Body() createTrackDto: CreateTrackDto,
+  ) {
     return this.instructorService.createTrack(id, createTrackDto);
   }
 
   @Post(':id/crews')
   @ApiOperation({ summary: '강사의 새 크루 코스 생성' })
   @ApiResponse({ status: 201, description: '성공' })
-  async createCrew(@Param('id', new ParseUUIDPipe()) id: string, @Body() createCrewDto: CreateCrewDto) {
+  async createCrew(
+    @Param('id', new ParseUUIDPipe()) id: string,
+    @Body() createCrewDto: CreateCrewDto,
+  ) {
     return this.instructorService.createCrew(id, createCrewDto);
   }
 }
