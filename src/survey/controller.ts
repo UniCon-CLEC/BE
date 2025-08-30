@@ -1,17 +1,8 @@
-import {
-  Controller,
-  Get,
-  Post,
-  Body,
-  Param,
-  Patch,
-  Delete,
-  UseGuards,
-  ValidationPipe,
-} from '@nestjs/common';
+import { Controller, Get, Post, Body, Param, Patch, Delete, UseGuards, ValidationPipe } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
 import { SurveyType } from '@prisma/client';
 import { JwtAuthGuard } from 'src/auth/guards/jwt-auth.guard';
+import { OptionalJwtAuthGuard } from 'src/auth/guards/optional-jwt-auth.guard';
 import { AuthenticatedUser } from 'src/auth/types/user-request.type';
 import { User } from 'src/decorators/user.decorator';
 import { CreateSurveyDto, SurveyDto } from './dto';
@@ -33,36 +24,42 @@ export class SurveyController {
   @Post()
   @UseGuards(JwtAuthGuard)
   @ApiOperation({ summary: '설문 응답 생성' })
-  @ApiResponse({ status: 201, description: '성공', type: SurveyDto })
+  @ApiResponse({ status: 201, description: '성공' })
   create(
     @Body(new ValidationPipe()) createSurveyDto: CreateSurveyDto,
     @User() user: AuthenticatedUser,
-  ): Promise<SurveyDto> {
+  ): Promise<void> {
     return this.createSurveyResponseUsecase.execute(createSurveyDto, user.id);
   }
 
   @Get('track-topic')
+  @UseGuards(OptionalJwtAuthGuard)
   @ApiOperation({ summary: '트랙 주제 설문 응답 목록 조회' })
   @ApiResponse({ status: 200, description: '성공', type: [SurveyDto] })
-  findAllTrackTopics(): Promise<SurveyDto[]> {
-    return this.getAllResponsesUsecase.execute(SurveyType.TRACK_TOPIC);
+  findAllTrackTopics(
+    @User() user: AuthenticatedUser | null,
+  ): Promise<SurveyDto[]> {
+    return this.getAllResponsesUsecase.execute(SurveyType.TRACK_TOPIC, user?.id);
   }
 
   @Get('crew-topic')
+  @UseGuards(OptionalJwtAuthGuard)
   @ApiOperation({ summary: '크루 주제 설문 응답 목록 조회' })
   @ApiResponse({ status: 200, description: '성공', type: [SurveyDto] })
-  findAllCrewTopics(): Promise<SurveyDto[]> {
-    return this.getAllResponsesUsecase.execute(SurveyType.CREW_TOPIC);
+  findAllCrewTopics(
+    @User() user: AuthenticatedUser | null,
+  ): Promise<SurveyDto[]> {
+    return this.getAllResponsesUsecase.execute(SurveyType.CREW_TOPIC, user?.id);
   }
 
   @Patch(':id/recommend')
   @UseGuards(JwtAuthGuard)
   @ApiOperation({ summary: '설문 응답 추천' })
-  @ApiResponse({ status: 200, description: '성공', type: SurveyDto })
+  @ApiResponse({ status: 200, description: '성공' })
   async recommendResponse(
     @User() user: AuthenticatedUser,
     @Param('id') id: string,
-  ): Promise<SurveyDto> {
+  ): Promise<void> {
     return this.recommendResponseUsecase.execute(id, user.id);
   }
 

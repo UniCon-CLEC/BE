@@ -32,7 +32,7 @@ export class SurveyDto {
   content: string;
 
   @ApiProperty()
-  userId: string;
+  isMine: boolean;
 
   @ApiProperty()
   recommendUsers: string[];
