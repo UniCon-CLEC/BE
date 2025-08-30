@@ -51,6 +51,7 @@ model User {
   trackEnrollments TrackEnrollment[]
   crewEnrollments  CrewEnrollment[]
   reviews          CourseReview[]
+  Survey           Survey[]
 }
 
 model Instructor {
@@ -218,4 +219,22 @@ model InstructorNotice {
 
   instructorId String     @db.Uuid
   instructor   Instructor @relation(fields: [instructorId], references: [id], onDelete: Cascade)
+}
+
+enum SurveyType {
+  TRACK_TOPIC
+  CREW_TOPIC
+}
+
+model Survey {
+  id              String        @id @default(uuid()) @db.Uuid
+  type            SurveyType
+
+  title           String
+  content         String
+  
+  userId          String        @db.Uuid
+  user            User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  recommendUsers  String[]
 }
