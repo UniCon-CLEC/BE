@@ -43,6 +43,6 @@ export class SurveyDto {
   @ApiProperty()
   recommendUsers: string[];
 
-  @ApiProperty({ type: [TagResponseDto], description: '설문에 연결된 태그 목록' })
-  tags: TagResponseDto[];
+  @ApiProperty({ type: [String], description: '설문에 연결된 태그 이름 목록' })
+  tags: string[];
 }

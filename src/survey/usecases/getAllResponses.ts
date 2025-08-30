@@ -26,13 +26,7 @@ export class GetAllResponsesUsecase {
     return {
       ...response,
       isMine: userId ? response.userId === userId : false,
-      tags: response.tags.map(tag => ({
-        id: tag.id,
-        name: tag.name,
-        parentId: tag.parentId,
-        parentName: tag.parent ? tag.parent.name : null,
-        children: [],
-      })),
+      tags: response.tags.map(tag => tag.name),
     };
   }
 }
