@@ -1,7 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
-import { CreateSurveyDto } from '../dto';
-import { Survey } from '@prisma/client';
+import { CreateSurveyDto, SurveyDto } from '../dto';
 
 @Injectable()
 export class CreateSurveyResponseUsecase {
@@ -10,7 +9,7 @@ export class CreateSurveyResponseUsecase {
   async execute(
     createSurveyDto: CreateSurveyDto,
     userId: string,
-  ): Promise<Survey> {
+  ): Promise<SurveyDto> {
     return this.prisma.survey.create({
       data: {
         ...createSurveyDto,

@@ -1,3 +1,4 @@
+import { ApiProperty } from '@nestjs/swagger';
 import { SurveyType } from '@prisma/client';
 import { IsEnum, IsNotEmpty, IsString, MaxLength } from 'class-validator';
 
@@ -15,4 +16,24 @@ export class CreateSurveyDto {
   @IsNotEmpty()
   @MaxLength(1000)
   content: string;
+}
+
+export class SurveyDto {
+  @ApiProperty()
+  id: string;
+
+  @ApiProperty({ enum: SurveyType })
+  type: SurveyType;
+
+  @ApiProperty()
+  title: string;
+
+  @ApiProperty()
+  content: string;
+
+  @ApiProperty()
+  userId: string;
+
+  @ApiProperty()
+  recommendUsers: string[];
 }
