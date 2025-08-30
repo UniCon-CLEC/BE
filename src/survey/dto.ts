@@ -1,6 +1,7 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { SurveyType } from '@prisma/client';
-import { IsEnum, IsNotEmpty, IsString, MaxLength } from 'class-validator';
+import { IsEnum, IsNotEmpty, IsString, MaxLength, IsOptional, IsArray, IsInt, Min } from 'class-validator';
+import { TagResponseDto } from 'src/tag/dto';
 
 export class CreateSurveyDto {
   @IsEnum(SurveyType)
@@ -16,6 +17,11 @@ export class CreateSurveyDto {
   @IsNotEmpty()
   @MaxLength(1000)
   content: string;
+
+  @ApiProperty({ description: '태그 ID', type: Number })
+  @IsInt()
+  @Min(1)
+  tagId: number;
 }
 
 export class SurveyDto {
@@ -36,4 +42,7 @@ export class SurveyDto {
 
   @ApiProperty()
   recommendUsers: string[];
+
+  @ApiProperty({ type: [TagResponseDto], description: '설문에 연결된 태그 목록' })
+  tags: TagResponseDto[];
 }

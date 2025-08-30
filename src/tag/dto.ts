@@ -59,6 +59,9 @@ export class TagResponseDto {
     @ApiPropertyOptional({ description: '부모 태그 ID (최상위 태그는 null)', nullable: true })
     parentId: number | null;
 
+    @ApiPropertyOptional({ description: '부모 태그 이름 (최상위 태그는 null)', nullable: true })
+    parentName: string | null;
+
     @ApiProperty({ type: () => [TagResponseDto] })
     children: TagResponseDto[];
 }
