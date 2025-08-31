@@ -8,7 +8,7 @@ on:
 
 env:
   ACR_LOGIN_SERVER: ${{ secrets.ACR_LOGIN_SERVER }}
-  AZURE_WEBAPP_NAME: 'unicon-clec'
+  AZURE_WEBAPP_NAME: 'clec-be'
   IMAGE_NAME: 'unicon-clec'
 
 jobs:
