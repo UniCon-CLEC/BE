@@ -33,6 +33,7 @@ export class MeService {
     return {
       id: user.id,
       name: user.name,
+      email: user.email,
       profileImageUrl: user.profileImageUrl,
       tags: user.tags.map((tag) => tag.name),
       courses,

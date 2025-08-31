@@ -72,6 +72,9 @@ export class MeResultDto {
   @ApiProperty({ description: '사용자 ID' })
   id: string;
 
+  @ApiProperty({ description: '이메일 (없으면 기본으로)' })
+  email: string;
+
   @ApiProperty({ description: '사용자 이름', nullable: true })
   name: string | null;
 
