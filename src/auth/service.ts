@@ -37,6 +37,7 @@ export class AuthService {
             data: {
                 id,
                 name: finalName,
+                email: user.email || `${id}@clec.me`,
                 profileImageUrl,
                 tags: {
                     connect: tagIds?.map(tagId => ({ id: tagId }))
