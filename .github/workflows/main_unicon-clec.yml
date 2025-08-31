@@ -7,7 +7,7 @@ on:
   workflow_dispatch:
 
 env:
-  ECR_REPOSITORY_NAME: 'unicon-clec'
+  ECR_REPOSITORY_NAME: 'clec/be'
 
 jobs:
   build-and-push:
@@ -46,4 +46,3 @@ jobs:
       - name: Print image URI
         run: |
           echo "Pushed image URI: ${{ steps.login-ecr-public.outputs.registry }}/${{ env.ECR_REPOSITORY_NAME }}:${{ github.sha }}"
-          
