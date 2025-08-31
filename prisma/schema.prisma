@@ -1,9 +1,3 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
-// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
-
 generator client {
   provider = "prisma-client-js"
 }
@@ -13,12 +7,26 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-enum CourseStatus {
+enum CourseType {
+  TRACK
+  CREW
+}
+
+enum TrackStatus {
   FUNDING
+  PREPARING
   ACTIVE
   COMPLETED
   CANCELED
 }
+
+enum CrewStatus {
+  PREPARING
+  ACTIVE
+  COMPLETED
+  CANCELED
+}
+
 
 enum EnrollmentType {
   FUNDING
@@ -33,19 +41,22 @@ enum EnrollmentStatus {
 }
 
 model User {
-  id              String         @id @default(uuid()) @db.Uuid
-  name            String?
-  profileImageUrl String?
-  createdAt       DateTime       @default(now())
-  updatedAt       DateTime       @updatedAt
-  tags            Tag[]    @relation("UserTags")
+  id               String         @id @default(uuid()) @db.Uuid
+  name             String?
+  profileImageUrl  String?
+  createdAt        DateTime       @default(now())
+  updatedAt        DateTime       @updatedAt
+  tags             Tag[]    @relation("UserTags")
 
-  enrollments     Enrollment[]
-  reviews         CourseReview[]
+  trackEnrollments TrackEnrollment[]
+  crewEnrollments  CrewEnrollment[]
+  reviews          CourseReview[]
+  Survey           Survey[]
 }
 
 model Instructor {
   id          String   @id @default(uuid()) @db.Uuid
+  name        String
   image       String?
   information String?
   schedule    String?
@@ -58,34 +69,86 @@ model Instructor {
 
 model Course {
   id                        String       @id @default(uuid()) @db.Uuid
+  type                      CourseType
   title                     String
-  status                    CourseStatus @default(FUNDING)
-  fundingTargetAmount       Decimal
-  fundingStartDate          DateTime 
-  fundingEndDate            DateTime 
   courseStartDate           DateTime
-  postFundingPrice          Decimal? // 펀딩 종료 후 판매 가격
   createdAt                 DateTime     @default(now())
   updatedAt                 DateTime     @updatedAt
 
-  instructorId String   @db.Uuid
-  instructor   Instructor @relation(fields: [instructorId], references: [id])
+  instructorId              String       @db.Uuid
+  instructor                Instructor   @relation(fields: [instructorId], references: [id])
 
-  introduction CourseIntroduction?
-  sessions     CourseSession[]
-  notices      CourseNotice[]
-  fundingTiers FundingTier[]
-  enrollments  Enrollment[]
-  reviews      CourseReview[]
-  tags         Tag[]       @relation("CourseTags")
+  track                     Track?
+  crew                      Crew?
+
+  introduction              CourseIntroduction?
+  sessions                  CourseSession[]
+  notices                   CourseNotice[]
+  reviews                   CourseReview[]
+  tags                      Tag[]       @relation("CourseTags")
+}
+
+model Track {
+  id                        Int              @id @default(autoincrement())
+  status                    TrackStatus
+  
+  fundingTargetAmount       Decimal
+  fundingStartDate          DateTime
+  fundingEndDate            DateTime
+  postFundingPrice          Decimal?
+  fundingTiers              FundingTier[]
+  enrollments               TrackEnrollment[]
+
+  courseId                  String @unique @db.Uuid
+  course                    Course @relation(fields: [courseId], references: [id], onDelete: Cascade)
+}
+
+model Crew {
+  id                        Int              @id @default(autoincrement())
+  status                    CrewStatus
+  price                     Decimal
+  courseId                  String @unique @db.Uuid
+  course                    Course @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  enrollments               CrewEnrollment[]
 }
 
 model Tag {
-  id   Int    @id @default(autoincrement())
-  name String @unique
+  id        Int    @id @default(autoincrement())
+  name      String @unique
 
-  courses Course[] @relation("CourseTags")
-  users   User[]   @relation("UserTags")
+  parentId  Int?
+  parent    Tag?     @relation("ParentChild", fields: [parentId], references: [id], onDelete: Cascade)
+  children  Tag[]    @relation("ParentChild")
+
+  courses   Course[] @relation("CourseTags")
+  users     User[]   @relation("UserTags")
+  surveys   Survey[] @relation("SurveyTags")
+}
+
+model TrackEnrollment {
+  id            Int              @id @default(autoincrement())
+  amountPaid    Decimal
+  createdAt     DateTime         @default(now())
+  status        EnrollmentStatus
+  userId        String           @db.Uuid
+  user          User             @relation(fields: [userId], references: [id])
+  trackId       Int
+  track         Track            @relation(fields: [trackId], references: [id])
+  fundingTierId Int
+  fundingTier   FundingTier      @relation(fields: [fundingTierId], references: [id])
+  @@unique([userId, trackId])
+}
+
+model CrewEnrollment {
+  id         Int              @id @default(autoincrement())
+  amountPaid Decimal
+  createdAt  DateTime         @default(now())
+  status     EnrollmentStatus
+  userId     String           @db.Uuid
+  user       User             @relation(fields: [userId], references: [id])
+  crewId     Int
+  crew       Crew             @relation(fields: [crewId], references: [id])
+  @@unique([userId, crewId])
 }
 
 model CourseIntroduction {
@@ -122,34 +185,13 @@ model CourseNotice {
 }
 
 model FundingTier {
-  id                 Int      @id @default(autoincrement())
+  id                 Int               @id @default(autoincrement())
   price              Decimal
   benefitDescription String
-  createdAt          DateTime @default(now())
-
-  courseId String @db.Uuid
-  course   Course @relation(fields: [courseId], references: [id], onDelete: Cascade)
-
-  enrollments Enrollment[]
-}
-
-model Enrollment {
-  id           Int           @id @default(autoincrement())
-  amountPaid   Decimal
-  createdAt    DateTime      @default(now())
-  status       EnrollmentStatus
-  type         EnrollmentType
-
-  userId String @db.Uuid
-  user   User   @relation(fields: [userId], references: [id])
-
-  courseId String @db.Uuid
-  course   Course @relation(fields: [courseId], references: [id])
-
-  fundingTierId Int?
-  fundingTier   FundingTier? @relation(fields: [fundingTierId], references: [id])
-
-  @@unique([userId, courseId])
+  createdAt          DateTime          @default(now())
+  trackId            Int
+  track              Track             @relation(fields: [trackId], references: [id], onDelete: Cascade)
+  enrollments        TrackEnrollment[]
 }
 
 model CourseReview {
@@ -178,4 +220,23 @@ model InstructorNotice {
 
   instructorId String     @db.Uuid
   instructor   Instructor @relation(fields: [instructorId], references: [id], onDelete: Cascade)
+}
+
+enum SurveyType {
+  TRACK_TOPIC
+  CREW_TOPIC
+}
+
+model Survey {
+  id              String        @id @default(uuid()) @db.Uuid
+  type            SurveyType
+
+  title           String
+  content         String
+  
+  userId          String        @db.Uuid
+  user            User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  recommendUsers  String[]
+  tags            Tag[]      @relation("SurveyTags")
 }
