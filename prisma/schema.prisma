@@ -38,6 +38,7 @@ enum EnrollmentStatus {
 model User {
   id               String         @id @default(uuid()) @db.Uuid
   name             String?
+  email            String?
   profileImageUrl  String?
   createdAt        DateTime       @default(now())
   updatedAt        DateTime       @updatedAt
