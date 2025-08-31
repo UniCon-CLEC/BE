@@ -1,8 +1,12 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
-import { MeResultDto, MyCourseDto, MyFundingDto } from './dto';
+import { CrewEnrollmentForDto, FundingEnrollmentForDto, MeResultDto, MyCourseDto, MyFundingDto, TrackEnrollmentForDto } from './dto';
 import { Decimal } from '@prisma/client/runtime/library';
-import { CourseForSort, CrewEnrollmentForDto, TrackEnrollmentForDto, UserWithEnrollments } from './types';
+import { 
+  CourseForSort,
+  UserWithEnrollments 
+} from './types';
+import { CourseLifecycleStatus } from '@prisma/client';
 
 @Injectable()
 export class MeService {
@@ -11,17 +15,20 @@ export class MeService {
   async getMe(userId: string): Promise<MeResultDto> {
     const user = await this.fetchUserWithEnrollments(userId)
 
+    const fundingCourses = user.fundingEnrollments.map((e) => 
+      this.transformFundingToCourseDto(e)
+    )
     const trackCourses = user.trackEnrollments.map((e) =>
       this.transformTrackToCourseDto(e)
     )
     const crewCourses = user.crewEnrollments.map((e) =>
       this.transformCrewToCourseDto(e)
     )
-    const fundings = user.trackEnrollments.map((e) =>
-      this.transformTrackToFundingDto(e)
+    const fundings = user.fundingEnrollments.map((e) =>
+      this.transformFundingToFundingDto(e)
     )
 
-    const courses: MyCourseDto[] = [...trackCourses, ...crewCourses]
+    const courses: MyCourseDto[] = [...fundingCourses, ...trackCourses, ...crewCourses]
 
     return {
       id: user.id,
@@ -34,25 +41,39 @@ export class MeService {
   }
 
   private fetchUserWithEnrollments(userId: string): Promise<UserWithEnrollments>{
-    const courseSelection = {
-      id: true, 
-      type: true, title: true, courseStartDate: true,
-      instructor: true,
-      introduction: { select: { coverImageUrl: true } }
-    }
-
     return this.prisma.user.findUnique({
       where: { id: userId },
       include: {
         tags: { select: { name: true } },
-        trackEnrollments: {
+        fundingEnrollments: {
           select: {
             status: true, createdAt: true, amountPaid: true,
-            track: {
+            funding: {
               select: {
                 status: true, fundingTargetAmount: true, fundingStartDate: true, fundingEndDate: true, courseId: true,
-                course: { select: courseSelection },
+                course: { 
+                  select: {
+                    id: true, type: true, title: true, courseStartDate: true, instructor: true,
+                    introduction: { select: { coverImageUrl: true } }
+                  }
+                 },
                 enrollments: { where: { status: 'PAID' }, select: { amountPaid: true } }
+              }
+            }
+          }
+        },
+        trackEnrollments: {
+          select: {
+            status: true, createdAt: true,
+            track: {
+              select: {
+                status: true,
+                course: { 
+                  select: {
+                    id: true, type: true, title: true, courseStartDate: true, instructor: true,
+                    introduction: { select: { coverImageUrl: true } }
+                  }
+                 },
               }
             }
           }
@@ -63,7 +84,12 @@ export class MeService {
             crew: {
               select: {
                 status: true,
-                course: { select: courseSelection }
+                course: { 
+                  select: {
+                    id: true, type: true, title: true, courseStartDate: true, instructor: true,
+                    introduction: { select: { coverImageUrl: true } }
+                  }
+                 },
               }
             }
           }
@@ -72,21 +98,54 @@ export class MeService {
     })
   }
 
-  private transformTrackToCourseDto(enrollment: TrackEnrollmentForDto): CourseForSort {
-    const { track, status: myFundingStatus, createdAt } = enrollment
-    const { course } = track
+  private transformFundingToCourseDto(enrollment: FundingEnrollmentForDto): CourseForSort {
+    const { funding, status: myFundingStatus, createdAt } = enrollment
+    const { course } = funding
 
-    const currentFundingAmount = track.enrollments.reduce(
+    const currentFundingAmount = funding.enrollments.reduce(
       (sum, en) => sum.add(en.amountPaid), new Decimal(0),
     )
 
-    const targetAmount = track.fundingTargetAmount
+    const targetAmount = funding.fundingTargetAmount
     let fundingProgress = 0
     if (targetAmount.greaterThan(0)) {
       fundingProgress = Math.round(
         currentFundingAmount.div(targetAmount).toNumber() * 100,
       )
     }
+
+    const trackStatus: CourseLifecycleStatus = (() => {
+      switch (funding.status) {
+        case 'FUNDING':
+          return 'ACTIVE';
+        case 'PREPARING':
+          return 'PREPARING';
+        case 'ACTIVE':
+          return 'ACTIVE';
+        case 'COMPLETED':
+          return 'COMPLETED';
+        case 'CANCELED':
+          return 'CANCELED';
+      }
+    })();
+    
+    return {
+      courseId: course.id,
+      type: course.type,
+      title: course.title,
+      coverImageUrl: course.introduction?.coverImageUrl ?? null,
+      instructor: course.instructor,
+      trackStatus,
+      fundingRate: fundingProgress,
+      fundedAmount: currentFundingAmount.toNumber(),
+      myFundingStatus,
+      createdAt
+    };
+  }
+
+  private transformTrackToCourseDto(enrollment: TrackEnrollmentForDto): CourseForSort {
+    const { track, status: myTrackStatus, createdAt } = enrollment
+    const { course } = track
     
     return {
       courseId: course.id,
@@ -95,9 +154,7 @@ export class MeService {
       coverImageUrl: course.introduction?.coverImageUrl ?? null,
       instructor: course.instructor,
       trackStatus: track.status,
-      fundingRate: fundingProgress,
-      fundedAmount: currentFundingAmount.toNumber(),
-      myFundingStatus,
+      myFundingStatus: myTrackStatus,
       createdAt
     };
   }
@@ -126,15 +183,15 @@ export class MeService {
     }
   }
 
-  private transformTrackToFundingDto(enrollment: TrackEnrollmentForDto): MyFundingDto {
-    const { track, status, amountPaid } = enrollment
+  private transformFundingToFundingDto(enrollment: FundingEnrollmentForDto): MyFundingDto {
+    const { funding, status, amountPaid } = enrollment
     return {
-      courseId: track.courseId,
-      title: track.course.title,
+      courseId: funding.courseId,
+      title: funding.course.title,
       status,
       amountPaid: amountPaid.toNumber(),
-      fundingStartDate: track.fundingStartDate,
-      fundingEndDate: track.fundingEndDate
+      fundingStartDate: funding.fundingStartDate,
+      fundingEndDate: funding.fundingEndDate
     }
   }
 }
