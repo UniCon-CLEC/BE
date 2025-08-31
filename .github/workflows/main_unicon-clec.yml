@@ -8,7 +8,7 @@ on:
 
 env:
   ACR_LOGIN_SERVER: ${{ secrets.ACR_LOGIN_SERVER }}
-  AZURE_WEBAPP_NAME: 'unicon-clec'
+  AZURE_WEBAPP_NAME: 'clec-be'
   IMAGE_NAME: 'unicon-clec'
 
 jobs:
@@ -49,3 +49,4 @@ jobs:
           app-name: ${{ env.AZURE_WEBAPP_NAME }}
           publish-profile: ${{ secrets.AZURE_APPSERVICE_PUBLISH_PROFILE }}
           images: '${{ env.ACR_LOGIN_SERVER }}/${{ env.IMAGE_NAME }}:${{ github.sha }}'
+      
