@@ -1,34 +1,67 @@
-import { Prisma } from "@prisma/client"
+import { Prisma } from '@prisma/client';
 
-const trackQueryArgs = Prisma.validator<Prisma.TrackDefaultArgs>()({
-  include: {
-    course: {
-      include: {
-        introduction: { select: { coverImageUrl: true } },
-        instructor: true,
-        reviews: { select: { rating: true } }
-      }
+const commonCourseSelect = {
+  id: true,
+  title: true,
+  courseStartDate: true,
+  introduction: true,
+  instructor: true,
+  reviews: {
+    select: {
+      rating: true,
     },
-    enrollments: {
-      where: { status: 'PAID' },
-      select: { amountPaid: true }
-    }
-  }
-})
-
-export type TrackWithDetails = Prisma.TrackGetPayload<typeof trackQueryArgs>
-
-const crewQueryArgs = Prisma.validator<Prisma.CrewDefaultArgs>()({
-  include: {
-    course: {
-      include: {
-        introduction: { select: { coverImageUrl: true } },
-        instructor: true,
-        reviews: { select: { rating: true } }
-      }
+  },
+  notices: {
+    orderBy: {
+      createdAt: 'desc',
     },
-    enrollments: { where: { status: 'PAID' } }
-  }
-})
+  },
+  sessions: {
+    orderBy: {
+      sessionNumber: 'asc',
+    },
+  },
+  tags: true,
+} as const;
 
-export type CrewWithDetails = Prisma.CrewGetPayload<typeof crewQueryArgs>
+export const trackInclude = {
+  course: {
+    select: commonCourseSelect,
+  },
+  tiers: true
+} satisfies Prisma.TrackInclude;
+
+export const crewInclude = {
+  course: {
+    select: commonCourseSelect,
+  },
+  enrollments: { where: { status: 'PAID' } },
+} satisfies Prisma.CrewInclude;
+
+export const fundingInclude = {
+  course: {
+    select: commonCourseSelect,
+  },
+  enrollments: {
+    where: { status: 'PAID' },
+    select: { amountPaid: true },
+  },
+  fundingTiers: true
+} satisfies Prisma.FundingInclude;
+
+export type TrackWithDetails = Prisma.TrackGetPayload<{
+  include: typeof trackInclude;
+}>;
+
+export type CrewWithDetails = Prisma.CrewGetPayload<{
+  include: typeof crewInclude;
+}>;
+
+export type FundingWithDetails = Prisma.FundingGetPayload<{
+  include: typeof fundingInclude;
+}>;
+
+export type CourseFromDetails =
+  | TrackWithDetails['course']
+  | CrewWithDetails['course']
+  | FundingWithDetails['course'];

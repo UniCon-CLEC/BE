@@ -1,87 +1,54 @@
-import { Injectable } from '@nestjs/common'
-import { PrismaService } from '../prisma/prisma.service'
-import { EnrollmentStatus } from '@prisma/client'
+import { Injectable } from '@nestjs/common';
+import { PrismaService } from '../prisma/prisma.service';
+import {
+  crewInclude,
+  fundingInclude,
+  trackInclude,
+} from './type';
 
 @Injectable()
 export class CourseRepository {
-  private readonly trackInclude = {
-    course: {
-      include: {
-        introduction: { select: { coverImageUrl: true } },
-        instructor: true,
-        reviews: { select: { rating: true } }
-      }
-    },
-    enrollments: {
-      where: { status: EnrollmentStatus.PAID },
-      select: { amountPaid: true }
-    }
-  }
-
-  private readonly crewInclude = {
-    course: {
-      include: {
-        introduction: { select: { coverImageUrl: true } },
-        instructor: true,
-        reviews: { select: { rating: true } }
-      }
-    },
-    enrollments: { where: { status: EnrollmentStatus.PAID } }
-  }
-
-  private readonly courseWithSessionsSelect = {
-    course: {
-      select: {
-        id: true,
-        title: true,
-        sessions: {
-          orderBy: { sessionNumber: 'asc' }
-        }
-      }
-    }
-  } as const //Fixed TypeError
-
-  constructor(private prisma: PrismaService) {}
+  constructor(private readonly prisma: PrismaService) {}
 
   async findAllTracks() {
     return this.prisma.track.findMany({
-      include: this.trackInclude,
-      orderBy: { course: { createdAt: 'desc' } }
-    })
+      include: trackInclude,
+      orderBy: { course: { createdAt: 'desc' } },
+    });
   }
 
   async findAllCrews() {
     return this.prisma.crew.findMany({
-      include: this.crewInclude,
-      orderBy: { course: { createdAt: 'desc' } }
-    })
+      include: crewInclude,
+      orderBy: { course: { createdAt: 'desc' } },
+    });
+  }
+
+  async findAllFundings() {
+    return this.prisma.funding.findMany({
+      include: fundingInclude,
+      orderBy: { course: { createdAt: 'desc' } },
+    });
   }
 
   async findTrackByCourseId(courseId: string) {
     return this.prisma.track.findUnique({
       where: { courseId },
-      include: this.trackInclude,
-    })
+      include: trackInclude,
+    });
   }
 
   async findCrewByCourseId(courseId: string) {
     return this.prisma.crew.findUnique({
       where: { courseId },
-      include: this.crewInclude,
-    })
+      include: crewInclude,
+    });
   }
 
-  async findSessionsByTrackCourseId(courseId: string) {
-    return this.prisma.track.findUnique({
+  async findFundingByCourseId(courseId: string) {
+    return this.prisma.funding.findUnique({
       where: { courseId },
-      select: this.courseWithSessionsSelect,
-    })
-  }
-
-  async findSessionsByCrewCourseId(courseId: string) {
-    return this.prisma.crew.findUnique({
-      where: { courseId },
-      select: this.courseWithSessionsSelect
-    })
+      include: fundingInclude,
+    });
   }
 }

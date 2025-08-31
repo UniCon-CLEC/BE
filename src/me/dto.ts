@@ -1,5 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { CourseType, CrewStatus, EnrollmentStatus, TrackStatus } from '@prisma/client';
+import { CourseLifecycleStatus, CourseType, EnrollmentStatus } from '@prisma/client';
+import { UserWithEnrollments } from './types';
 
 export class InstructorInfoDto {
   @ApiProperty({ description: '강사 ID' })
@@ -48,11 +49,11 @@ export class MyCourseDto {
   @ApiProperty({ description: '강사 정보' })
   instructor: InstructorInfoDto;
 
-  @ApiProperty({ description: '트랙 상태', enum: TrackStatus, required: false })
-  trackStatus?: TrackStatus;
+  @ApiProperty({ description: '트랙 상태', enum: CourseLifecycleStatus, required: false })
+  trackStatus?: CourseLifecycleStatus;
 
-  @ApiProperty({ description: '크루 상태', enum: CrewStatus, required: false })
-  crewStatus?: CrewStatus;
+  @ApiProperty({ description: '크루 상태', enum: CourseLifecycleStatus, required: false })
+  crewStatus?: CourseLifecycleStatus;
 
   @ApiProperty({ description: '진행 회차', required: false })
   currentRound?: number;
@@ -86,3 +87,7 @@ export class MeResultDto {
   @ApiProperty({ description: '나의 펀딩 목록', type: [MyFundingDto] })
   fundings: MyFundingDto[];
 }
+
+export type FundingEnrollmentForDto = UserWithEnrollments['fundingEnrollments'][0];
+export type TrackEnrollmentForDto = UserWithEnrollments['trackEnrollments'][0];
+export type CrewEnrollmentForDto = UserWithEnrollments['crewEnrollments'][0];

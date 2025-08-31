@@ -10,9 +10,10 @@ datasource db {
 enum CourseType {
   TRACK
   CREW
+  FUNDING
 }
 
-enum TrackStatus {
+enum FundingStatus {
   FUNDING
   PREPARING
   ACTIVE
@@ -20,17 +21,11 @@ enum TrackStatus {
   CANCELED
 }
 
-enum CrewStatus {
+enum CourseLifecycleStatus {
   PREPARING
   ACTIVE
   COMPLETED
   CANCELED
-}
-
-
-enum EnrollmentType {
-  FUNDING
-  PURCHASE
 }
 
 enum EnrollmentStatus {
@@ -50,6 +45,7 @@ model User {
 
   trackEnrollments TrackEnrollment[]
   crewEnrollments  CrewEnrollment[]
+  fundingEnrollments FundingEnrollment[]
   reviews          CourseReview[]
   Survey           Survey[]
 }
@@ -80,6 +76,7 @@ model Course {
 
   track                     Track?
   crew                      Crew?
+  funding                   Funding?
 
   introduction              CourseIntroduction?
   sessions                  CourseSession[]
@@ -88,24 +85,35 @@ model Course {
   tags                      Tag[]       @relation("CourseTags")
 }
 
-model Track {
+model Funding {
   id                        Int              @id @default(autoincrement())
-  status                    TrackStatus
+  status                    FundingStatus
   
   fundingTargetAmount       Decimal
   fundingStartDate          DateTime
   fundingEndDate            DateTime
   postFundingPrice          Decimal?
   fundingTiers              FundingTier[]
-  enrollments               TrackEnrollment[]
+  enrollments               FundingEnrollment[]
 
   courseId                  String @unique @db.Uuid
   course                    Course @relation(fields: [courseId], references: [id], onDelete: Cascade)
 }
 
+model Track {
+  id          Int                   @id @default(autoincrement())
+  status      CourseLifecycleStatus
+
+  courseId    String                @unique @db.Uuid
+  course      Course                @relation(fields: [courseId], references: [id], onDelete: Cascade)
+
+  tiers       TrackTier[]
+  enrollments TrackEnrollment[]
+}
+
 model Crew {
   id                        Int              @id @default(autoincrement())
-  status                    CrewStatus
+  status                    CourseLifecycleStatus
   price                     Decimal
   courseId                  String @unique @db.Uuid
   course                    Course @relation(fields: [courseId], references: [id], onDelete: Cascade)
@@ -125,18 +133,18 @@ model Tag {
   surveys   Survey[] @relation("SurveyTags")
 }
 
-model TrackEnrollment {
+model FundingEnrollment {
   id            Int              @id @default(autoincrement())
   amountPaid    Decimal
   createdAt     DateTime         @default(now())
   status        EnrollmentStatus
   userId        String           @db.Uuid
   user          User             @relation(fields: [userId], references: [id])
-  trackId       Int
-  track         Track            @relation(fields: [trackId], references: [id])
+  fundingId     Int
+  funding       Funding          @relation(fields: [fundingId], references: [id])
   fundingTierId Int
   fundingTier   FundingTier      @relation(fields: [fundingTierId], references: [id])
-  @@unique([userId, trackId])
+  @@unique([userId, fundingId])
 }
 
 model CrewEnrollment {
@@ -149,6 +157,20 @@ model CrewEnrollment {
   crewId     Int
   crew       Crew             @relation(fields: [crewId], references: [id])
   @@unique([userId, crewId])
+}
+
+model TrackEnrollment {
+  id          Int              @id @default(autoincrement())
+  amountPaid  Decimal
+  createdAt   DateTime         @default(now())
+  status      EnrollmentStatus
+  userId      String           @db.Uuid
+  user        User             @relation(fields: [userId], references: [id])
+  trackId     Int
+  track       Track            @relation(fields: [trackId], references: [id])
+  trackTierId Int
+  trackTier   TrackTier        @relation(fields: [trackTierId], references: [id])
+  @@unique([userId, trackId])
 }
 
 model CourseIntroduction {
@@ -189,8 +211,18 @@ model FundingTier {
   price              Decimal
   benefitDescription String
   createdAt          DateTime          @default(now())
+  fundingId          Int
+  funding            Funding           @relation(fields: [fundingId], references: [id], onDelete: Cascade)
+  enrollments        FundingEnrollment[]
+}
+
+model TrackTier {
+  id                 Int             @id @default(autoincrement())
+  price              Decimal
+  benefitDescription String
+  createdAt          DateTime        @default(now())
   trackId            Int
-  track              Track             @relation(fields: [trackId], references: [id], onDelete: Cascade)
+  track              Track           @relation(fields: [trackId], references: [id], onDelete: Cascade)
   enrollments        TrackEnrollment[]
 }
 
