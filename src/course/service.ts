@@ -1,139 +1,140 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
-import { PrismaService } from '../prisma/prisma.service';
-import { TrackDto, CrewDto, CourseSessionDto, CourseDetailSessionsDto } from './dto';
+import {
+  TrackCourseDto,
+  CrewCourseDto,
+  FundingCourseDto,
+} from './dto';
 import { CourseRepository } from './repository';
-import { CrewWithDetails, TrackWithDetails } from './type';
-import { Decimal } from '@prisma/client/runtime/library';
+import { CourseFromDetails, CrewWithDetails, FundingWithDetails, TrackWithDetails } from './type';
+
 
 @Injectable()
 export class CourseService {
   constructor(
-    private readonly prisma: PrismaService,
-    private readonly courseRepository: CourseRepository
+    private readonly courseRepository: CourseRepository,
   ) {}
 
-  async getAllTracks(): Promise<TrackDto[]> {
-    const tracks = await this.courseRepository.findAllTracks()
-    return Promise.all(tracks.map((track) => this.toTrackDto(track)))
+  async getAllTracks(): Promise<TrackCourseDto[]> {
+    const tracks = await this.courseRepository.findAllTracks();
+    return Promise.all(tracks.map((track) => this.toTrackCourseDto(track)));
   }
 
-  async getAllCrews(): Promise<CrewDto[]> {
-    const crews = await this.courseRepository.findAllCrews()
-    return Promise.all(crews.map((crew) => this.toCrewDto(crew)))
+  async getAllCrews(): Promise<CrewCourseDto[]> {
+    const crews = await this.courseRepository.findAllCrews();
+    return Promise.all(crews.map((crew) => this.toCrewCourseDto(crew)));
   }
 
-  async getTrackByCourseId(courseId: string): Promise<TrackDto> {
-    const track = await this.courseRepository.findTrackByCourseId(courseId)
+  async getAllFundings(): Promise<FundingCourseDto[]> {
+    const fundings = await this.courseRepository.findAllFundings();
+    return Promise.all(
+      fundings.map((funding) => this.toFundingCourseDto(funding)),
+    );
+  }
+
+  async getTrackByCourseId(courseId: string): Promise<TrackCourseDto> {
+    const track = await this.courseRepository.findTrackByCourseId(courseId);
     if (!track) {
-      throw new NotFoundException(`코스 ID ${courseId}에 해당하는 트랙을 찾을 수 없습니다`)
+      throw new NotFoundException(
+        `코스 ID ${courseId}에 해당하는 트랙을 찾을 수 없습니다`,
+      );
     }
-    return this.toTrackDto(track)
+    return this.toTrackCourseDto(track);
   }
 
-  async getCrewByCourseId(courseId: string): Promise<CrewDto> {
-    const crew = await this.courseRepository.findCrewByCourseId(courseId)
+  async getCrewByCourseId(courseId: string): Promise<CrewCourseDto> {
+    const crew = await this.courseRepository.findCrewByCourseId(courseId);
     if (!crew) {
-      throw new NotFoundException(`코스 ID ${courseId}에 해당하는 크루를 찾을 수 없습니다`)
+      throw new NotFoundException(
+        `코스 ID ${courseId}에 해당하는 크루를 찾을 수 없습니다`,
+      );
     }
-    return this.toCrewDto(crew)
+    return this.toCrewCourseDto(crew);
   }
 
-  async getTrackSessionsByCourseId(courseId: string): Promise<CourseDetailSessionsDto> {
-    const result = await this.courseRepository.findSessionsByTrackCourseId(courseId)
-    if (!result || !result.course) 
-      throw new NotFoundException(`코스 ID ${courseId}에 해당하는 트랙의 세션을 찾을 수 없습니다`)
-    const { course } = result
-
-    const courseDetail: CourseDetailSessionsDto = {
-      courseId: course.id,
-      title: course.title,
-      sessions: course.sessions.map(
-        (e) => ({
-          sessionNumber: e.sessionNumber,
-          title: e.title
-        })
-      )
+  async getFundingByCourseId(courseId: string): Promise<FundingCourseDto> {
+    const funding = await this.courseRepository.findFundingByCourseId(courseId);
+    if (!funding) {
+      throw new NotFoundException(
+        `코스 ID ${courseId}에 해당하는 펀딩을 찾을 수 없습니다`,
+      );
     }
-
-    return courseDetail
-  }
-  
-  async getCrewSessionsByCourseId(courseId: string): Promise<CourseDetailSessionsDto> {
-    const result = await this.courseRepository.findSessionsByCrewCourseId(courseId)
-    if (!result || !result.course) 
-      throw new NotFoundException(`코스 ID ${courseId}에 해당하는 크루의 세션을 찾을 수 없습니다`)
-    const { course } = result
-
-    const courseDetail: CourseDetailSessionsDto = {
-      courseId: course.id,
-      title: course.title,
-      sessions: course.sessions.map(
-        (e) => ({
-          sessionNumber: e.sessionNumber,
-          title: e.title
-        })
-      )
-    }
-
-    return courseDetail
+    return this.toFundingCourseDto(funding);
   }
 
-
-
-  private toTrackDto(track: TrackWithDetails): TrackDto {
-    const { course } = track
-
-    const currentFundingAmount = track.enrollments.reduce(
-      (sum, e) => sum.add(e.amountPaid),
-      new Decimal(0)
-    )
-    const targetAmount = track.fundingTargetAmount
-    let fundingProgress = 0
-    if (targetAmount.greaterThan(0)) {
-      fundingProgress = Math.round(
-        currentFundingAmount.div(targetAmount).toNumber() * 100
-      )
-    }
-
-    const averageRating = course.reviews.length
-      ? course.reviews.reduce((sum, r) => sum + r.rating, 0) / course.reviews.length
-      : 0
-
+  private toCommonCourseDto(course: CourseFromDetails){
+    const averageRating =
+      course.reviews.length > 0
+        ? course.reviews.reduce((s, r) => s + r.rating, 0) /
+          course.reviews.length
+        : 0;
     return {
       courseId: course.id,
       title: course.title,
       instructor: course.instructor,
-      coverImageUrl: course.introduction?.coverImageUrl ?? null,
       courseStartDate: course.courseStartDate,
       averageRating: parseFloat(averageRating.toFixed(1)),
+      introduction: course.introduction,
+      notices: course.notices,
+      sessions: course.sessions,
+      tags: course.tags.map((e) => e.name)
+    }
+  }
+
+  private toTrackCourseDto(track: TrackWithDetails): TrackCourseDto {
+    const common = this.toCommonCourseDto(track.course);
+
+    return {
+      ...common,
       status: track.status,
-      fundingProgress,
-      fundingTargetAmount: track.fundingTargetAmount.toNumber(),
-      currentFundingAmount: currentFundingAmount.toNumber(),
-      fundingStartDate: track.fundingStartDate,
-      fundingEndDate: track.fundingEndDate
+      tiers: track.tiers.map((e) => ({
+        id: e.id,
+        price: e.price.toNumber(),
+        benefitDescription: e.benefitDescription
+      }))
     }
   }
 
-  private toCrewDto(crew: CrewWithDetails): CrewDto {
-    const { course } = crew
-    const reviews = course.reviews
-
-    const averageRating = reviews.length
-      ? reviews.reduce((sum, r) => sum + r.rating, 0) / reviews.length
-      : 0
+  private toCrewCourseDto(crew: CrewWithDetails): CrewCourseDto {
+    const common = this.toCommonCourseDto(crew.course);
 
     return {
-      courseId: course.id,
-      title: course.title,
-      instructor: course.instructor,
-      coverImageUrl: course.introduction?.coverImageUrl ?? null,
-      courseStartDate: course.courseStartDate,
-      averageRating: parseFloat(averageRating.toFixed(1)),
+      ...common,
       status: crew.status,
       price: crew.price.toNumber(),
       studentCount: crew.enrollments.length
     }
   }
 
+  private toFundingCourseDto(funding: FundingWithDetails): FundingCourseDto {
+    const common = this.toCommonCourseDto(funding.course);
+
+    const total = funding.enrollments.reduce(
+      (s, e) => s + e.amountPaid.toNumber(), 0
+    )
+
+    const targetAmount = funding.fundingTargetAmount.toNumber()
+    const achievementRate = 
+      targetAmount > 0
+        ? parseFloat(((total / targetAmount) * 100).toFixed(1))
+        : 0
+    
+    return {
+      ...common,
+      status: funding.status,
+      fundingTargetAmount: targetAmount,
+      achievementRate,
+      totalFundedAmount: total,
+      fundingStartDate: funding.fundingStartDate,
+      fundingEndDate: funding.fundingEndDate,
+      postFundingPrice: funding.postFundingPrice
+        ? funding.postFundingPrice.toNumber()
+        : null,
+      enrollmentCount: funding.enrollments.length,
+      fundingTiers: funding.fundingTiers.map((e) => ({
+        id: e.id,
+        price: e.price.toNumber(),
+        benefitDescription: e.benefitDescription
+      }))
+    }
+  }
 }
