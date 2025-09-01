@@ -67,7 +67,6 @@ export class CourseService {
         ? course.reviews.reduce((s, r) => s + r.rating, 0) /
           course.reviews.length
         : 0;
-    const { id, courseId, ...rest } = course.introduction
 
     return {
       courseId: course.id,
@@ -75,9 +74,9 @@ export class CourseService {
       instructor: course.instructor,
       courseStartDate: course.courseStartDate,
       averageRating: parseFloat(averageRating.toFixed(1)),
-      ...rest,
-      coverImageUrl: course.introduction.coverImageUrl,
-      description: course.introduction.description,
+      coverImageUrl: course.introduction?.coverImageUrl,
+      description: course.introduction?.description,
+      scheduleDetails: course.introduction?.scheduleDetails,
       notices: course.notices,
       sessions: course.sessions,
       tags: course.tags.map((e) => e.name)
