@@ -49,7 +49,7 @@ export class CourseNoticeDto {
   createdAt: Date;
 }
 
-export class CourseIntroductionDto {
+/* export class CourseIntroductionDto {
   @ApiProperty({ description: '소개 ID' })
   id: number;
 
@@ -61,7 +61,7 @@ export class CourseIntroductionDto {
 
   @ApiProperty({ description: '일정 상세' })
   scheduleDetails: string;
-}
+} */
 
 export class CourseSessionDto {
   @ApiProperty({ description: '세션 번호' })
@@ -93,12 +93,21 @@ export class CourseBaseDto {
   @ApiProperty({ type: () => [CourseSessionDto], description: '세션' })
   sessions: CourseSessionDto[];
 
-  @ApiProperty({
+  @ApiProperty({ description: 'coverImageUrl' })
+  coverImageUrl: string;
+  
+  @ApiProperty({ description: '한줄 설명' })
+  description: string;
+
+  @ApiProperty({ description: '스케쥴 상세' })
+  scheduleDetails: string;
+
+  /* @ApiProperty({
     type: () => CourseIntroductionDto,
     description: '강의 소개',
     nullable: true,
   })
-  introduction: CourseIntroductionDto | null;
+  introduction: CourseIntroductionDto | null; */
 
   @ApiProperty({ type: [String], description: '태그 이름들 배열' })
   tags: string[];
