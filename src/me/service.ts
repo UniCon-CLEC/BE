@@ -34,7 +34,7 @@ export class MeService {
       id: user.id,
       name: user.name,
       email: user.email,
-      profileImageUrl: user.profileImageUrl,
+      profileImageUrl: user.profileImageUrl ?? `${process.env.CLOUDFRONT_URL}/default.svg`,
       tags: user.tags.map((tag) => tag.name),
       courses,
       fundings
