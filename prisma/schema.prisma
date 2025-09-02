@@ -258,6 +258,7 @@ model InstructorNotice {
 enum SurveyType {
   TRACK_TOPIC
   CREW_TOPIC
+  FUNDING_TOPIC
 }
 
 model Survey {
