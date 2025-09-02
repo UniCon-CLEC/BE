@@ -52,6 +52,16 @@ export class SurveyController {
     return this.getAllResponsesUsecase.execute(SurveyType.CREW_TOPIC, user?.id);
   }
 
+  @Get('funding-topic')
+  @UseGuards(OptionalJwtAuthGuard)
+  @ApiOperation({ summary: '펀딩 주제 설문 응답 목록 조회' })
+  @ApiResponse({ status: 200, description: '성공', type: [SurveyDto] })
+  findAllFundingTopics(
+    @User() user: AuthenticatedUser | null,
+  ): Promise<SurveyDto[]> {
+    return this.getAllResponsesUsecase.execute(SurveyType.FUNDING_TOPIC, user?.id);
+  }
+
   @Patch(':id/recommend')
   @UseGuards(JwtAuthGuard)
   @ApiOperation({ summary: '설문 응답 추천' })
