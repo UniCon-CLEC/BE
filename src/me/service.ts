@@ -1,11 +1,11 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
-import { CrewEnrollmentForDto, FundingEnrollmentForDto, MeDto, MeResultDto, MyCourseDto, MyCrewDto, MyFundingDto, MyTrackDto, TrackEnrollmentForDto } from './dto';
+import { CrewEnrollmentForDto, FundingEnrollmentForDto, InstructorInfoDto, MeDto, MeResultDto, MyCourseDto, MyCrewDto, MyFundingDto, MyTrackDto, TrackEnrollmentForDto } from './dto';
 import { Decimal } from '@prisma/client/runtime/library';
 import { 
   UserWithEnrollments 
 } from './types';
-import { CourseLifecycleStatus } from '@prisma/client';
+import { CourseLifecycleStatus, Instructor } from '@prisma/client';
 
 @Injectable()
 export class MeService {
@@ -216,7 +216,7 @@ export class MeService {
       type: course.type,
       title: course.title,
       coverImageUrl: course.introduction?.coverImageUrl ?? null,
-      instructor: course.instructor,
+      instructor: this.toInstructorDto(course.instructor),
       crewStatus: crew.status,
       currentRound: ongoingSession,
       myEnrollmentStatus: myEnrollmentStatus,
@@ -233,7 +233,7 @@ export class MeService {
       type: course.type,
       title: course.title,
       coverImageUrl: course.introduction?.coverImageUrl ?? null,
-      instructor: course.instructor,
+      instructor: this.toInstructorDto(course.instructor),
       trackStatus: track.status,
       myTrackStatus,
     };
@@ -255,7 +255,7 @@ export class MeService {
       type: course.type,
       title: course.title,
       coverImageUrl: course.introduction?.coverImageUrl ?? null,
-      instructor: course.instructor,
+      instructor: this.toInstructorDto(course.instructor),
       crewStatus: crew.status,
       currentRound: ongoingSession,
       myCrewStatus,
@@ -282,7 +282,17 @@ export class MeService {
       fundingStartDate: funding.fundingStartDate,
       fundingEndDate: funding.fundingEndDate,
       fundingTargetAmount: funding.fundingTargetAmount.toNumber(),
-      achievementRate
+      achievementRate,
+      createdAt: enrollment.createdAt,
+      instructor: this.toInstructorDto(funding.course.instructor)
+    }
+  }
+
+  private toInstructorDto(instructor: Instructor): InstructorInfoDto {
+    return {
+      id: instructor.id,
+      name: instructor.name,
+      image: instructor.image
     }
   }
 }
