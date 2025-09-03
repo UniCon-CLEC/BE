@@ -49,20 +49,6 @@ export class CourseNoticeDto {
   createdAt: Date;
 }
 
-/* export class CourseIntroductionDto {
-  @ApiProperty({ description: '소개 ID' })
-  id: number;
-
-  @ApiProperty({ description: '커버 이미지 URL' })
-  coverImageUrl: string;
-
-  @ApiProperty({ description: '설명' })
-  description: string;
-
-  @ApiProperty({ description: '일정 상세' })
-  scheduleDetails: string;
-} */
-
 export class CourseSessionDto {
   @ApiProperty({ description: '세션 번호' })
   sessionNumber: number;
@@ -101,13 +87,6 @@ export class CourseBaseDto {
 
   @ApiProperty({ description: '스케쥴 상세' })
   scheduleDetails: string;
-
-  /* @ApiProperty({
-    type: () => CourseIntroductionDto,
-    description: '강의 소개',
-    nullable: true,
-  })
-  introduction: CourseIntroductionDto | null; */
 
   @ApiProperty({ type: [String], description: '태그 이름들 배열' })
   tags: string[];
