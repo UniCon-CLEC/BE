@@ -31,6 +31,12 @@ export class MyFundingDto {
 
   @ApiProperty({ description: '펀딩 종료일' })
   fundingEndDate: Date;
+
+  @ApiProperty({ description: '펀딩 목표금액' })
+  fundingTargetAmount: number;
+
+  @ApiProperty({ description: '펀딩 달성률' })
+  achievementRate: number;
 }
 
 export class MyCourseDto {

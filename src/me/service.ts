@@ -264,13 +264,25 @@ export class MeService {
 
   private transformFundingToFundingDto(enrollment: FundingEnrollmentForDto): MyFundingDto {
     const { funding, status, amountPaid } = enrollment
+
+    const total = funding.enrollments.reduce(
+      (s, e) => s + e.amountPaid.toNumber(), 0
+    )
+
+    const targetAmount = funding.fundingTargetAmount.toNumber()
+    const achievementRate = 
+      targetAmount > 0
+        ? parseFloat(((total / targetAmount) * 100).toFixed(1))
+        : 0
     return {
       courseId: funding.courseId,
       title: funding.course.title,
       status,
       amountPaid: amountPaid.toNumber(),
       fundingStartDate: funding.fundingStartDate,
-      fundingEndDate: funding.fundingEndDate
+      fundingEndDate: funding.fundingEndDate,
+      fundingTargetAmount: funding.fundingTargetAmount.toNumber(),
+      achievementRate
     }
   }
 }
