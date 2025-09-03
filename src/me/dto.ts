@@ -20,6 +20,9 @@ export class MyFundingDto {
   @ApiProperty({ description: '코스 제목' })
   title: string;
 
+  @ApiProperty({ description: '강사 정보' })
+  instructor: InstructorInfoDto;
+
   @ApiProperty({ description: '펀딩 상태', enum: EnrollmentStatus })
   status: EnrollmentStatus;
 
@@ -37,6 +40,9 @@ export class MyFundingDto {
 
   @ApiProperty({ description: '펀딩 달성률' })
   achievementRate: number;
+
+  @ApiProperty({ description: 'Enrollment 등록일' })
+  createdAt: Date;
 }
 
 export class MyCourseDto {
