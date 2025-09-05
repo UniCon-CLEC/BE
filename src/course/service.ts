@@ -3,9 +3,13 @@ import {
   TrackCourseDto,
   CrewCourseDto,
   FundingCourseDto,
+  CourseIntroductionDto,
+  CourseCurriculumDto,
+  CourseMaterialDto,
+  CourseInstructorDto,
 } from './dto';
 import { CourseRepository } from './repository';
-import { CourseFromDetails, CrewWithDetails, FundingWithDetails, TrackWithDetails } from './type';
+import { CourseFromDetails, CourseWithCurriculum, CourseWithInstructor, CourseWithIntroduction, CourseWithMaterial, CrewWithDetails, FundingWithDetails, TrackWithDetails } from './type';
 
 
 @Injectable()
@@ -61,6 +65,46 @@ export class CourseService {
     return this.toFundingCourseDto(funding);
   }
 
+  async getIntroductionByCourseId(courseId: string): Promise<CourseIntroductionDto> {
+    const course = await this.courseRepository.findIntroductionByCourseId(courseId);
+    if (!course || !course.introduction) {
+      throw new NotFoundException(
+        `코스 ID ${courseId}에 해당하는 소개 정보를 찾을 수 없습니다`,
+      );
+    }
+    return this.toIntroductionDto(course);
+  }
+
+  async getCurriculumByCourseId(courseId: string): Promise<CourseCurriculumDto> {
+    const course = await this.courseRepository.findCurriculumByCourseId(courseId);
+    if (!course) {
+      throw new NotFoundException(
+        `코스 ID ${courseId}에 해당하는 커리큘럼을 찾을 수 없습니다`,
+      );
+    }
+    return this.toCurriculumDto(course);
+  }
+
+  async getMaterialByCourseId(courseId: string): Promise<CourseMaterialDto> {
+    const course = await this.courseRepository.findMaterialByCourseId(courseId);
+    if (!course) {
+      throw new NotFoundException(
+        `코스 ID ${courseId}에 해당하는 준비물을 찾을 수 없습니다`,
+      );
+    }
+    return this.toMaterialDto(course);
+  }
+
+  async getInstructorByCourseId(courseId: string): Promise<CourseInstructorDto> {
+    const course = await this.courseRepository.findInstructorByCourseId(courseId);
+    if (!course || !course.instructor) {
+      throw new NotFoundException(
+        `코스 ID ${courseId}에 해당하는 강사 정보를 찾을 수 없습니다`,
+      );
+    }
+    return this.toInstructorDto(course);
+  }
+
   private toCommonCourseDto(course: CourseFromDetails){
     const averageRating =
       course.reviews.length > 0
@@ -92,6 +136,7 @@ export class CourseService {
       tiers: track.tiers.map((e) => ({
         id: e.id,
         price: e.price.toNumber(),
+        title: e.title,
         benefitDescription: e.benefitDescription
       }))
     }
@@ -136,8 +181,37 @@ export class CourseService {
       fundingTiers: funding.fundingTiers.map((e) => ({
         id: e.id,
         price: e.price.toNumber(),
+        title: e.title,
         benefitDescription: e.benefitDescription
       }))
     }
+  }
+
+  private toIntroductionDto(course: CourseWithIntroduction): CourseIntroductionDto {
+    return {
+      blocks: course.introduction!.blocks.map(block => ({
+        order: block.order,
+        type: block.type,
+        content: block.content,
+        url: block.url
+      }))
+    };
+  }
+
+  private toCurriculumDto(course: CourseWithCurriculum): CourseCurriculumDto {
+    return {
+      sessions: course.sessions
+    };
+  }
+
+  private toMaterialDto(course: CourseWithMaterial): CourseMaterialDto {
+    return {
+      supplies: course.supplies,
+    };
+  }
+
+  private toInstructorDto(course: CourseWithInstructor): CourseInstructorDto {
+    const { name, image, information, schedule } = course.instructor;
+    return { name, image, information, schedule };
   }
 }

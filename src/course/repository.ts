@@ -1,6 +1,10 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import {
+  courseCurriculumInclude,
+  courseInstructorInclude,
+  courseIntroductionInclude,
+  courseMaterialSelect,
   crewInclude,
   fundingInclude,
   trackInclude,
@@ -49,6 +53,34 @@ export class CourseRepository {
     return this.prisma.funding.findUnique({
       where: { courseId },
       include: fundingInclude,
+    });
+  }
+
+  async findIntroductionByCourseId(courseId: string) {
+    return this.prisma.course.findUnique({
+      where: { id: courseId },
+      include: courseIntroductionInclude,
+    });
+  }
+
+  async findCurriculumByCourseId(courseId: string) {
+    return this.prisma.course.findUnique({
+      where: { id: courseId },
+      include: courseCurriculumInclude,
+    });
+  }
+
+  async findMaterialByCourseId(courseId: string) {
+    return this.prisma.course.findUnique({
+      where: { id: courseId },
+      select: courseMaterialSelect,
+    });
+  }
+
+  async findInstructorByCourseId(courseId: string) {
+    return this.prisma.course.findUnique({
+      where: { id: courseId },
+      include: courseInstructorInclude,
     });
   }
 }
