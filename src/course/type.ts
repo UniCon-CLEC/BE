@@ -49,6 +49,39 @@ export const fundingInclude = {
   fundingTiers: true
 } satisfies Prisma.FundingInclude;
 
+export const courseIntroductionInclude = {
+  introduction: {
+    include: {
+      blocks: {
+        orderBy: {
+          order: 'asc'
+        }
+      }
+    }
+  }
+} satisfies Prisma.CourseInclude;
+
+export const courseCurriculumInclude = {
+  sessions: {
+    select: {
+      sessionNumber: true,
+      title: true,
+      subtitle: true
+    },
+    orderBy: {
+      sessionNumber: 'asc'
+    }
+  }
+} satisfies Prisma.CourseInclude;
+
+export const courseInstructorInclude = {
+  instructor: true,
+} satisfies Prisma.CourseInclude;
+
+export const courseMaterialSelect = {
+  supplies: true,
+} satisfies Prisma.CourseSelect;
+
 export type TrackWithDetails = Prisma.TrackGetPayload<{
   include: typeof trackInclude;
 }>;
@@ -59,6 +92,22 @@ export type CrewWithDetails = Prisma.CrewGetPayload<{
 
 export type FundingWithDetails = Prisma.FundingGetPayload<{
   include: typeof fundingInclude;
+}>;
+
+export type CourseWithIntroduction = Prisma.CourseGetPayload<{
+  include: typeof courseIntroductionInclude;
+}>;
+
+export type CourseWithCurriculum = Prisma.CourseGetPayload<{
+  include: typeof courseCurriculumInclude;
+}>;
+
+export type CourseWithMaterial = Prisma.CourseGetPayload<{
+  select: typeof courseMaterialSelect;
+}>;
+
+export type CourseWithInstructor = Prisma.CourseGetPayload<{
+  include: typeof courseInstructorInclude;
 }>;
 
 export type CourseFromDetails =
