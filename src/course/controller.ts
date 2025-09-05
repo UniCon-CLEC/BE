@@ -10,6 +10,10 @@ import {
   TrackCourseDto,
   CrewCourseDto,
   FundingCourseDto,
+  CourseMaterialDto,
+  CourseInstructorDto,
+  CourseCurriculumDto,
+  CourseIntroductionDto,
 } from './dto';
 
 @ApiTags('Course (코스)')
@@ -72,5 +76,37 @@ export class CourseController {
       throw new NotFoundException(`Funding with course ID ${courseId} not found`);
     }
     return funding;
+  }
+
+  @Get(':courseId/introduction')
+  @ApiOperation({ summary: '코스 소개 정보 조회' })
+  @ApiResponse({ status: 200, description: '성공', type: CourseIntroductionDto })
+  @ApiResponse({ status: 404, description: '코스를 찾을 수 없음' })
+  getCourseIntroduction(@Param('courseId') courseId: string) {
+    return this.courseService.getIntroductionByCourseId(courseId);
+  }
+
+  @Get(':courseId/curriculum')
+  @ApiOperation({ summary: '코스 커리큘럼 조회' })
+  @ApiResponse({ status: 200, description: '성공', type: CourseCurriculumDto })
+  @ApiResponse({ status: 404, description: '코스를 찾을 수 없음' })
+  getCourseCurriculum(@Param('courseId') courseId: string) {
+    return this.courseService.getCurriculumByCourseId(courseId);
+  }
+
+  @Get(':courseId/material')
+  @ApiOperation({ summary: '코스 준비물 조회' })
+  @ApiResponse({ status: 200, description: '성공', type: CourseMaterialDto })
+  @ApiResponse({ status: 404, description: '코스를 찾을 수 없음' })
+  getCourseMaterial(@Param('courseId') courseId: string) {
+    return this.courseService.getMaterialByCourseId(courseId);
+  }
+
+  @Get(':courseId/instructor')
+  @ApiOperation({ summary: '코스 강사 정보 조회' })
+  @ApiResponse({ status: 200, description: '성공', type: CourseInstructorDto })
+  @ApiResponse({ status: 404, description: '코스를 찾을 수 없음' })
+  getCourseInstructor(@Param('courseId') courseId: string) {
+    return this.courseService.getInstructorByCourseId(courseId);
   }
 }
