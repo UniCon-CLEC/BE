@@ -71,6 +71,7 @@ model Course {
   courseStartDate           DateTime
   createdAt                 DateTime     @default(now())
   updatedAt                 DateTime     @updatedAt
+  supplies                  String[]     @default([])
 
   instructorId              String       @db.Uuid
   instructor                Instructor   @relation(fields: [instructorId], references: [id])
@@ -188,7 +189,8 @@ model CourseSession {
   id             Int      @id @default(autoincrement())
   sessionNumber  Int
   title          String
-  content        String?
+  subtitle       String?
+  content        String?  @db.Text
   materials      String?
   createdAt      DateTime @default(now())
 
@@ -210,6 +212,7 @@ model CourseNotice {
 model FundingTier {
   id                 Int               @id @default(autoincrement())
   price              Decimal
+  title              String
   benefitDescription String
   createdAt          DateTime          @default(now())
   fundingId          Int
@@ -220,6 +223,7 @@ model FundingTier {
 model TrackTier {
   id                 Int             @id @default(autoincrement())
   price              Decimal
+  title              String
   benefitDescription String
   createdAt          DateTime        @default(now())
   trackId            Int
