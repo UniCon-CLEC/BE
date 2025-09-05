@@ -231,7 +231,7 @@ model CourseNotice {
 model FundingTier {
   id                 Int               @id @default(autoincrement())
   price              Decimal
-  title              String
+  title              String?
   benefitDescription String
   createdAt          DateTime          @default(now())
   fundingId          Int
@@ -242,7 +242,7 @@ model FundingTier {
 model TrackTier {
   id                 Int             @id @default(autoincrement())
   price              Decimal
-  title              String
+  title              String?
   benefitDescription String
   createdAt          DateTime        @default(now())
   trackId            Int
