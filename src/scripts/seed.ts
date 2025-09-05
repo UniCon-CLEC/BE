@@ -3,35 +3,46 @@ import {
   CourseType,
   FundingStatus,
   CourseLifecycleStatus,
+  BlockType,
 } from '@prisma/client';
 import * as fs from 'fs';
 import * as path from 'path';
 
 const prisma = new PrismaClient();
 
+interface CourseIntroBlockData {
+  order: number;
+  type: 'TEXT' | 'IMAGE';
+  content?: string;
+  url?: string;
+}
+
+interface IntroductionData {
+  coverImageUrl: string;
+  description: string;
+  scheduleDetails: string;
+  blocks: CourseIntroBlockData[];
+}
+
 interface TierData {
   price: number;
+  title?: string;
   benefitDescription: string;
 }
 
-// CourseData 인터페이스 수정
 interface CourseData {
   type: 'FUNDING' | 'TRACK' | 'CREW';
   title: string;
   courseStartDate: string;
-  instructorName: string;
+  instructorId: string;
   tagIds: number[];
-  // introduction 객체 추가
-  introduction: {
-    coverImageUrl: string;
-    description: string;
-    scheduleDetails: string;
-  };
+  introduction: IntroductionData;
   fundingDetails?: {
     status: 'FUNDING' | 'PREPARING' | 'ACTIVE' | 'COMPLETED' | 'CANCELED';
     fundingTargetAmount: number;
     fundingStartDate: string;
     fundingEndDate: string;
+    postFundingPrice?: number;
     tiers: TierData[];
   };
   trackDetails?: {
@@ -45,7 +56,7 @@ interface CourseData {
 }
 
 interface InputData {
-  instructors: { name: string }[];
+  instructors: { id: string; name: string; image?: string; information?: string }[];
   courses: CourseData[];
 }
 
@@ -64,138 +75,167 @@ async function createData() {
   const input = loadInputData();
 
   for (const instructorData of input.instructors) {
-    const existingInstructor = await prisma.instructor.findFirst({
-      where: { name: instructorData.name },
+    await prisma.instructor.upsert({
+      where: { id: instructorData.id },
+      update: {
+        name: instructorData.name,
+        image: instructorData.image,
+        information: instructorData.information,
+      },
+      create: instructorData,
     });
-
-    if (!existingInstructor) {
-      await prisma.instructor.create({
-        data: { name: instructorData.name },
-      });
-    }
   }
   console.log(
-    `${input.instructors.length}명의 강사 정보가 생성 또는 확인되었습니다.`,
+    `${input.instructors.length}명의 강사 정보가 생성 또는 업데이트되었습니다.`,
   );
 
-  const instructors = await prisma.instructor.findMany();
-  const instructorMap = new Map(instructors.map((i) => [i.name, i.id]));
-
- for (const courseData of input.courses) {
-    const instructorId = instructorMap.get(courseData.instructorName);
+  for (const courseData of input.courses) {
+    const { instructorId } = courseData;
     if (!instructorId) {
-      console.warn(
-        `'${courseData.instructorName}' 강사를 찾을 수 없어 코스를 건너뜁니다.`,
-      );
+      console.warn(`instructorId가 없어 '${courseData.title}' 코스를 건너뜁니다.`);
       continue;
     }
 
-    const tagsPayload = courseData.tagIds.map((id) => ({ id }));
     const type = CourseType[courseData.type];
     const courseStartDate = new Date(courseData.courseStartDate);
-    const instructorPayload = { connect: { id: instructorId } };
+    const tagsToConnect = courseData.tagIds.map((id) => ({ id }));
 
-    const introductionPayload = {
-      upsert: {
-        create: courseData.introduction,
-        update: courseData.introduction,
+    const introductionCreateInput = {
+      ...courseData.introduction,
+      blocks: {
+        create: courseData.introduction.blocks.map((block) => ({
+          ...block,
+          type: BlockType[block.type],
+        })),
       },
     };
 
-    const fundingPayload =
-      courseData.type === 'FUNDING' && courseData.fundingDetails
-        ? {
-            upsert: {
-              create: {
-                status: FundingStatus[courseData.fundingDetails.status],
-                fundingTargetAmount:
-                  courseData.fundingDetails.fundingTargetAmount,
-                fundingStartDate: new Date(
-                  courseData.fundingDetails.fundingStartDate,
-                ),
-                fundingEndDate: new Date(
-                  courseData.fundingDetails.fundingEndDate,
-                ),
-                fundingTiers: {
-                  create: courseData.fundingDetails.tiers,
-                },
-              },
-              update: {
-                status: FundingStatus[courseData.fundingDetails.status],
-                fundingTargetAmount:
-                  courseData.fundingDetails.fundingTargetAmount,
-                fundingStartDate: new Date(
-                  courseData.fundingDetails.fundingStartDate,
-                ),
-                fundingEndDate: new Date(
-                  courseData.fundingDetails.fundingEndDate,
-                ),
-              },
-            },
-          }
-        : undefined;
-
-    const trackPayload =
-      courseData.type === 'TRACK' && courseData.trackDetails
-        ? {
-            upsert: {
-              create: {
-                status: CourseLifecycleStatus[courseData.trackDetails.status],
-                tiers: { create: courseData.trackDetails.tiers },
-              },
-              update: {
-                status: CourseLifecycleStatus[courseData.trackDetails.status],
-              },
-            },
-          }
-        : undefined;
-
-    const crewPayload =
-      courseData.type === 'CREW' && courseData.crewDetails
-        ? {
-            upsert: {
-              create: {
-                status: CourseLifecycleStatus[courseData.crewDetails.status],
-                price: courseData.crewDetails.price,
-              },
-              update: {
-                status: CourseLifecycleStatus[courseData.crewDetails.status],
-                price: courseData.crewDetails.price,
-              },
-            },
-          }
-        : undefined;
+    const introductionUpdateInput = {
+      ...courseData.introduction,
+      blocks: {
+        deleteMany: {},
+        create: courseData.introduction.blocks.map((block) => ({
+          ...block,
+          type: BlockType[block.type],
+        })),
+      },
+    };
 
     const existingCourse = await prisma.course.findFirst({
       where: { title: courseData.title },
     });
 
     if (existingCourse) {
+      // --- 코스 업데이트 로직 ---
       await prisma.course.update({
         where: { id: existingCourse.id },
         data: {
           type,
           courseStartDate,
-          instructor: instructorPayload,
-          tags: { set: tagsPayload },
-          introduction: introductionPayload,
-          funding: fundingPayload,
-          track: trackPayload,
-          crew: crewPayload,
+          instructor: { connect: { id: instructorId } },
+          tags: { set: tagsToConnect },
+          introduction: {
+            upsert: {
+              create: introductionCreateInput,
+              update: introductionUpdateInput,
+            },
+          },
+          funding:
+            courseData.type === 'FUNDING' && courseData.fundingDetails
+              ? {
+                  upsert: {
+                    create: {
+                      status: FundingStatus[courseData.fundingDetails.status],
+                      fundingTargetAmount: courseData.fundingDetails.fundingTargetAmount,
+                      fundingStartDate: new Date(courseData.fundingDetails.fundingStartDate),
+                      fundingEndDate: new Date(courseData.fundingDetails.fundingEndDate),
+                      postFundingPrice: courseData.fundingDetails.postFundingPrice,
+                      fundingTiers: { create: courseData.fundingDetails.tiers },
+                    },
+                    update: {
+                      status: FundingStatus[courseData.fundingDetails.status],
+                      fundingTargetAmount: courseData.fundingDetails.fundingTargetAmount,
+                      fundingStartDate: new Date(courseData.fundingDetails.fundingStartDate),
+                      fundingEndDate: new Date(courseData.fundingDetails.fundingEndDate),
+                      postFundingPrice: courseData.fundingDetails.postFundingPrice,
+                    },
+                  },
+                }
+              : undefined,
+          track:
+            courseData.type === 'TRACK' && courseData.trackDetails
+              ? {
+                  upsert: {
+                    create: {
+                      status: CourseLifecycleStatus[courseData.trackDetails.status],
+                      tiers: { create: courseData.trackDetails.tiers },
+                    },
+                    update: {
+                      status: CourseLifecycleStatus[courseData.trackDetails.status],
+                    },
+                  },
+                }
+              : undefined,
+          crew:
+            courseData.type === 'CREW' && courseData.crewDetails
+              ? {
+                  upsert: {
+                    create: {
+                      status: CourseLifecycleStatus[courseData.crewDetails.status],
+                      price: courseData.crewDetails.price,
+                    },
+                    update: {
+                      status: CourseLifecycleStatus[courseData.crewDetails.status],
+                      price: courseData.crewDetails.price,
+                    },
+                  },
+                }
+              : undefined,
         },
       });
     } else {
-     await prisma.course.create({
+      // --- 코스 생성 로직 ---
+      await prisma.course.create({
         data: {
           title: courseData.title,
           type,
           courseStartDate,
-          instructor: instructorPayload,
-          tags: { connect: tagsPayload },
-          introduction: { create: courseData.introduction },
-          funding: fundingPayload ? { create: fundingPayload.upsert.create } : undefined,
-          track: trackPayload ? { create: trackPayload.upsert.create } : undefined,
-          crew: crewPayload ? { create: crewPayload.upsert.create } : undefined,
+          instructor: { connect: { id: instructorId } },
+          tags: { connect: tagsToConnect },
+          introduction: {
+            create: introductionCreateInput,
+          },
+          funding:
+            courseData.type === 'FUNDING' && courseData.fundingDetails
+              ? {
+                  create: {
+                    status: FundingStatus[courseData.fundingDetails.status],
+                    fundingTargetAmount: courseData.fundingDetails.fundingTargetAmount,
+                    fundingStartDate: new Date(courseData.fundingDetails.fundingStartDate),
+                    fundingEndDate: new Date(courseData.fundingDetails.fundingEndDate),
+                    postFundingPrice: courseData.fundingDetails.postFundingPrice,
+                    fundingTiers: { create: courseData.fundingDetails.tiers },
+                  },
+                }
+              : undefined,
+          track:
+            courseData.type === 'TRACK' && courseData.trackDetails
+              ? {
+                  create: {
+                    status: CourseLifecycleStatus[courseData.trackDetails.status],
+                    tiers: { create: courseData.trackDetails.tiers },
+                  },
+                }
+              : undefined,
+          crew:
+            courseData.type === 'CREW' && courseData.crewDetails
+              ? {
+                  create: {
+                    status: CourseLifecycleStatus[courseData.crewDetails.status],
+                    price: courseData.crewDetails.price,
+                  },
+                }
+              : undefined,
         },
       });
     }
