@@ -35,6 +35,11 @@ enum EnrollmentStatus {
   CANCELED
 }
 
+enum BlockType {
+  TEXT
+  IMAGE
+}
+
 model User {
   id               String         @id @default(uuid()) @db.Uuid
   name             String?
@@ -177,12 +182,26 @@ model TrackEnrollment {
 
 model CourseIntroduction {
   id                    Int     @id @default(autoincrement())
+
+  blocks                CourseIntroBlock[]
+
   coverImageUrl         String
   description           String
   scheduleDetails       String
 
   courseId String @unique @db.Uuid
   course   Course @relation(fields: [courseId], references: [id], onDelete: Cascade)
+}
+
+model CourseIntroBlock {
+  id                    Int     @id @default(autoincrement())
+  order                 Int
+  type                  BlockType
+  content               String?   @db.Text
+  url                   String?
+
+  courseIntroductionId  Int
+  courseIntroduction    CourseIntroduction  @relation(fields: [courseIntroductionId], references: [id], onDelete: Cascade)
 }
 
 model CourseSession {
